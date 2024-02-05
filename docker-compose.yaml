@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  node:
+    build: .
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3024:3001"
+    depends_on:
+      - mongo
+    environment:
+      - MONGODB_URI=mongodb://mongoAdmin:password@mongo:27017/test?authSource=admin
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongoAdmin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=test
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
