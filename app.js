@@ -1,41 +1,47 @@
 const express = require('express');
-const app = express();
-app.use(express.json());
 const cors = require('cors');
-
-app.use(cors());
-
 const mongoose = require('mongoose');
-const uri = env.process.MONGODB_URI;
+require('dotenv').config();
 
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+// ^^ Models
+const User = require('./models/User');   
+
+
+const app = express();
+
+const PORT = process.env.PORT || 3001; 
+const MONGODB_URI = process.env.MONGODB_URI;
+
+
+app.use(express.json()); 
+app.use(cors()); // Pour activer CORS
+
+// MongoDB Connection
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('Could not connect to MongoDB', err));
+    .catch(err => console.error('Could not connect to MongoDB:', err));
 
-const User = mongoose.model('User', new mongoose.Schema({
-    name: String,
-    email: String,
-    password: String
-})
-);
-
+// Routes
 app.get('/', (req, res) => {
     res.send('Hello World');
-}
-);
+});
 
-app.post('/api/users', (req, res) => {
-    const user = new User({
-        name: req.body.name,
-        email: req.body.email,
-     
-    });
-    user.save()
-        .then(() => res.send(user))
-        .catch(err => res.status(400).send(err.message));
-}
-);
+app.post('/api/users', async (req, res) => {
+    try {
+        const { name, email } = req.body;
+
+        if (!name || !email ) {
+            return res.status(400).send('Name, email, and password are required.');
+        }
+
+        const newUser = new User({ name, email }); 
+        await newUser.save(); 
+
+        res.status(201).send(newUser);
+    } catch (err) {
+        res.status(400).send(err.message);
+    }
+});
 
 
-app.listen(3001, () => console.log('Server is running on port 3000'));
-
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
